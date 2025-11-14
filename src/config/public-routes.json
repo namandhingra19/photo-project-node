@@ -1,0 +1,72 @@
+{
+  "publicRoutes": [
+    {
+      "path": "/health",
+      "method": "GET"
+    },
+    {
+      "path": "/api-docs",
+      "method": "GET"
+    },
+    {
+      "path": "/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/auth/check-email",
+      "method": "POST"
+    },
+    {
+      "path": "/api/auth/login",
+      "method": "POST"
+    },
+    {
+      "path": "/api/auth/verify-email",
+      "method": "POST"
+    },
+    {
+      "path": "/api/auth/google",
+      "method": "GET"
+    },
+    {
+      "path": "/api/auth/google/callback",
+      "method": "GET"
+    },
+    {
+      "path": "/api/auth/google/role-selection",
+      "method": "POST"
+    },
+    {
+      "path": "/api/auth/refresh",
+      "method": "POST"
+    },
+    {
+      "path": "/api/email/health",
+      "method": "GET"
+    },
+    {
+      "path": "/api/email/templates",
+      "method": "GET"
+    },
+    {
+      "path": "/api/email/preview/*",
+      "method": "GET"
+    },
+    {
+      "path": "/api/email/test-connection",
+      "method": "GET"
+    },
+    {
+      "path": "/api/email/test-verification",
+      "method": "POST"
+    },
+    {
+      "path": "/api/email/test-welcome",
+      "method": "POST"
+    },
+    {
+      "path": "/api/ai/health",
+      "method": "GET"
+    }
+  ]
+}

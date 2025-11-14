@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userId        Int            @id @default(autoincrement())
+  email         String         @unique
+  password      String?
+  name          String?
+  phoneNumber   String?
+  isVerified    Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  createdBy     Int?
+  updatedBy     Int?
+  deletedBy     Int?
+  refreshTokens RefreshToken[]
+  userProfiles  UserProfile[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  userProfileId   Int                  @id @default(autoincrement())
+  userId          Int
+  role            UserRole
+  name            String
+  tenantId        Int?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  deletedAt       DateTime?
+  createdBy       Int?
+  updatedBy       Int?
+  deletedBy       Int?
+  createdAlbums   Album[]              @relation("AlbumCreator")
+  createdPhotos   Photo[]              @relation("PhotoCreator")
+  projectProfiles ProjectUserProfile[]
+  createdProjects Project[]            @relation("ProjectCreator")
+  tenant          Tenant?              @relation(fields: [tenantId], references: [tenantId])
+  user            User                 @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model Tenant {
+  tenantId        Int                  @id @default(autoincrement())
+  slug            String               @unique
+  name            String
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  deletedAt       DateTime?
+  createdBy       Int?
+  updatedBy       Int?
+  deletedBy       Int?
+  albums          Album[]
+  embeddings      Embedding[]
+  photos          Photo[]
+  projectProfiles ProjectUserProfile[]
+  projects        Project[]
+  userProfiles    UserProfile[]
+
+  @@map("tenants")
+}
+
+model Project {
+  projectId       Int                  @id @default(autoincrement())
+  projectUuid     String               @unique @default(cuid())
+  title           String
+  description     String?
+  eventDate       DateTime?
+  tenantId        Int
+  status          ProjectStatus        @default(DRAFT)
+  isActive        Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  deletedAt       DateTime?
+  createdBy       Int?
+  updatedBy       Int?
+  deletedBy       Int?
+  albums          Album[]
+  projectProfiles ProjectUserProfile[]
+  creatorProfile  UserProfile?         @relation("ProjectCreator", fields: [createdBy], references: [userProfileId])
+  tenant          Tenant               @relation(fields: [tenantId], references: [tenantId])
+
+  @@map("projects")
+}
+
+model ProjectUserProfile {
+  projectUserProfileId Int           @id @default(autoincrement())
+  projectId            Int
+  userProfileId        Int
+  tenantId             Int
+  accessibility        Accessibility @default(VIEW_ONLY)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  deletedAt            DateTime?
+  createdBy            Int?
+  updatedBy            Int?
+  deletedBy            Int?
+  project              Project       @relation(fields: [projectId], references: [projectId], onDelete: Cascade)
+  tenant               Tenant        @relation(fields: [tenantId], references: [tenantId])
+  userProfile          UserProfile   @relation(fields: [userProfileId], references: [userProfileId], onDelete: Cascade)
+
+  @@unique([projectId, userProfileId])
+  @@map("project_user_profiles")
+}
+
+model Album {
+  albumId     Int          @id @default(autoincrement())
+  projectId   Int
+  tenantId    Int
+  title       String
+  description String?
+  coverImage  String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  createdBy   Int?
+  updatedBy   Int?
+  deletedBy   Int?
+  creator     UserProfile? @relation("AlbumCreator", fields: [createdBy], references: [userProfileId])
+  project     Project      @relation(fields: [projectId], references: [projectId], onDelete: Cascade)
+  tenant      Tenant       @relation(fields: [tenantId], references: [tenantId])
+  embeddings  Embedding[]
+  photos      Photo[]
+
+  @@map("albums")
+}
+
+model Photo {
+  photoId    Int          @id @default(autoincrement())
+  albumId    Int
+  tenantId   Int
+  s3Key      String
+  s3Url      String
+  filename   String?
+  fileSize   Int?
+  mimeType   String?
+  width      Int?
+  height     Int?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  deletedAt  DateTime?
+  createdBy  Int?
+  updatedBy  Int?
+  deletedBy  Int?
+  embeddings Embedding[]
+  album      Album        @relation(fields: [albumId], references: [albumId], onDelete: Cascade)
+  creator    UserProfile? @relation("PhotoCreator", fields: [createdBy], references: [userProfileId])
+  tenant     Tenant       @relation(fields: [tenantId], references: [tenantId])
+
+  @@map("photos")
+}
+
+model Embedding {
+  embeddingId Int       @id @default(autoincrement())
+  photoId     Int
+  albumId     Int
+  tenantId    Int
+  embeddings  Float[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdBy   Int?
+  updatedBy   Int?
+  deletedBy   Int?
+  album       Album     @relation(fields: [albumId], references: [albumId], onDelete: Cascade)
+  photo       Photo     @relation(fields: [photoId], references: [photoId], onDelete: Cascade)
+  tenant      Tenant    @relation(fields: [tenantId], references: [tenantId])
+
+  @@map("embeddings")
+}
+
+model RefreshToken {
+  refreshTokenId Int      @id @default(autoincrement())
+  token          String   @unique
+  userId         Int
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+enum UserRole {
+  ENTERPRISE
+  CLIENT
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum Accessibility {
+  VIEW_ONLY
+  EDIT
+  ADMIN
+}
