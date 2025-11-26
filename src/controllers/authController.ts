@@ -28,7 +28,7 @@ export class AuthController {
     } else {
       // User doesn't exist, send verification email
       const verificationToken = await AuthService.sendVerificationEmail(email, UserRole.CLIENT);
-      
+
       return res.json(createSuccessResponse({
         userExists: false,
         requiresVerification: true,
@@ -45,47 +45,43 @@ export class AuthController {
     // Check if user exists
     const existingUser = await AuthService.checkUserExists(email);
 
-    if (existingUser) {
-      // User exists, require password
-      if (!password) {
-        return res.status(200).json(createSuccessResponse(
-          { requiresPassword: true },
-          'Password required'
-        ));
-      }
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: `User with email ${email} does not exist`
+        }
+      });
+    }
 
-      // Verify password and login
-      const { user, userProfile } = await AuthService.loginWithPassword(email, password);
-      const { accessToken, refreshToken } = await AuthService.generateTokens({ user, userProfile });
+    if (!existingUser.isVerified) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: `User with email ${email} is not verified`
+        }
+      });
+    }
 
-      return res.json(createSuccessResponse({
-        user: {
-          userId: user.userId,
-          email: user.email,
-          name: user.name,
-          isVerified: user.isVerified
-        },
-        userProfile: {
-          userProfileId: userProfile.userProfileId,
-          role: userProfile.role,
-          name: userProfile.name,
-          tenantId: userProfile.tenantId
-        },
-        accessToken,
-        refreshToken
-      }, 'Login successful'));
-    } else {
-      // User doesn't exist, send verification email
-      const verificationToken = await AuthService.sendVerificationEmail(email, UserRole.CLIENT);
-      
-      return res.json(createSuccessResponse(
-        { 
-          requiresVerification: true,
-          verificationToken 
-        },
-        'Verification email sent'
+    // User exists, require password
+    if (!password) {
+      return res.status(400).json(createSuccessResponse(
+        { requiresPassword: true },
+        'Password required'
       ));
     }
+
+    // Verify password and login
+    const data = await AuthService.loginUser({
+      email, password
+    });
+    // const { user, userProfile } = await AuthService.loginWithPassword(email, password);
+    // const { accessToken, refreshToken } = await AuthService.generateTokens({ user, userProfile });
+
+    return res.json(createSuccessResponse({
+      ...data
+    }, 'Login successful'));
+
   });
 
   // Email verification with role selection
@@ -234,8 +230,6 @@ export class AuthController {
       userProfile: {
         userProfileId: userProfile.userProfileId,
         role: userProfile.role,
-        name: userProfile.name,
-        tenantId: userProfile.tenantId
       },
       tenant: userProfile.tenant ? {
         tenantId: userProfile.tenant.tenantId,

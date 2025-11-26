@@ -17,7 +17,9 @@ import projectRoutes from './routes/projects';
 import albumRoutes from './routes/albums';
 import photoRoutes from './routes/photos';
 import emailRoutes from './routes/email';
+import userRoutes from './routes/user';
 import aiRoutes from './routes/ai';
+import inviteRoutes from './routes/invites';
 
 // Import middleware
 import { handleError, handleNotFound, handleJsonErrors } from './middlewares/errorHandler';
@@ -97,6 +99,8 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/albums', albumRoutes);
 app.use('/api/photos', photoRoutes);
 app.use('/api/email', emailRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/invites', inviteRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

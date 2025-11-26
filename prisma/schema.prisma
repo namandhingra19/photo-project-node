@@ -7,6 +7,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum EmailInviteType {
+  PROJECT_INVITE_AND_REGISTER
+  PROJECT_INVITE
+  REGISTER_USER
+}
+
+enum EmailInviteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum UserRole {
+  ENTERPRISE
+  CLIENT
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum Accessibility {
+  VIEW_ONLY
+  EDIT
+  ADMIN
+}
+
 model User {
   userId        Int            @id @default(autoincrement())
   email         String         @unique
@@ -69,9 +99,10 @@ model Tenant {
 }
 
 model Project {
-  projectId       Int                  @id @default(autoincrement())
-  projectUuid     String               @unique @default(cuid())
-  title           String
+  projectId   Int    @id @default(autoincrement())
+  projectUuid String @unique @default(cuid())
+  title       String
+
   description     String?
   eventDate       DateTime?
   tenantId        Int
@@ -87,6 +118,7 @@ model Project {
   projectProfiles ProjectUserProfile[]
   creatorProfile  UserProfile?         @relation("ProjectCreator", fields: [createdBy], references: [userProfileId])
   tenant          Tenant               @relation(fields: [tenantId], references: [tenantId])
+  invites         EmailInvite[]
 
   @@map("projects")
 }
@@ -189,20 +221,24 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
-enum UserRole {
-  ENTERPRISE
-  CLIENT
-}
+model EmailInvite {
+  emailInviteId Int               @id @default(autoincrement())
+  email         String
+  type          EmailInviteType
+  expiresAt     DateTime
+  token         String            @unique
+  status        EmailInviteStatus @default(PENDING)
+  role          UserRole          @default(CLIENT)
+  projectId     Int?
+  inviteLink    String?
+  details       Json?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
-enum ProjectStatus {
-  DRAFT
-  ACTIVE
-  COMPLETED
-  ARCHIVED
-}
+  createdBy Int
+  updatedBy Int?
+  deletedBy Int?
+  project   Project? @relation(fields: [projectId], references: [projectId], onDelete: Cascade)
 
-enum Accessibility {
-  VIEW_ONLY
-  EDIT
-  ADMIN
+  @@map("email_invites")
 }

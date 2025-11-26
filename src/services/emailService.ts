@@ -25,11 +25,19 @@ export interface PasswordResetEmailData extends EmailTemplateData {
   resetToken: string;
 }
 
+export interface ProjectInviteEmailData extends EmailTemplateData {
+  inviteToken: string;
+  projectName: string;
+  senderName: string;
+}
+
 // Email types enum
 export enum EmailType {
   VERIFICATION = 'verification',
   WELCOME = 'welcome',
-  PASSWORD_RESET = 'password-reset'
+  PASSWORD_RESET = 'password-reset',
+  PROJECT_INVITE_AND_REGISTER = 'project-invite-and-register',
+  PROJECT_INVITE = 'project-invite'
 }
 
 export class EmailService {
@@ -45,14 +53,15 @@ export class EmailService {
   private createTransporter(): nodemailer.Transporter {
     // Use environment variables for email configuration
     const emailConfig = {
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+      host: process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '587'),
+      secure: process.env.EMAIL_SECURE === 'true' || process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        user: process.env.EMAIL_USER || process.env.SMTP_USER,
+        pass: process.env.EMAIL_PASS || process.env.SMTP_PASS
       }
     };
+
 
     // If no SMTP credentials are provided, create a test transporter
     if (!emailConfig.auth.user || !emailConfig.auth.pass) {
@@ -72,7 +81,7 @@ export class EmailService {
    */
   private async renderTemplate(templateName: string, data: EmailTemplateData): Promise<string> {
     const templatePath = path.join(this.templatesPath, `${templateName}.ejs`);
-    
+
     // Check if template file exists
     if (!fs.existsSync(templatePath)) {
       throw new Error(`Email template not found: ${templateName}.ejs`);
@@ -96,23 +105,18 @@ export class EmailService {
     from?: string
   ): Promise<void> {
     const mailOptions = {
-      from: from || process.env.SMTP_FROM || 'Photo Project <noreply@photoproject.com>',
+      from: from || process.env.EMAIL_HOST || process.env.SMTP_FROM || 'Photo Project <noreply@photoproject.com>',
       to,
       subject,
       html: htmlContent
     };
 
+
     try {
       const info = await this.transporter.sendMail(mailOptions);
-      
+
       // Log email info (in development)
       if (process.env.NODE_ENV === 'development') {
-        console.log('📧 Email sent:', {
-          to,
-          subject,
-          messageId: info.messageId,
-          previewUrl: nodemailer.getTestMessageUrl(info)
-        });
       }
     } catch (error: any) {
       console.error('❌ Email sending failed:', error.message);
@@ -125,7 +129,7 @@ export class EmailService {
    */
   async sendVerificationEmail(data: VerificationEmailData): Promise<void> {
     const subject = '📸 Verify Your Email - Photo Project';
-    
+
     const htmlContent = await this.renderTemplate(EmailType.VERIFICATION, {
       ...data,
       appUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
@@ -139,7 +143,7 @@ export class EmailService {
    */
   async sendWelcomeEmail(data: WelcomeEmailData): Promise<void> {
     const subject = '🎉 Welcome to Photo Project!';
-    
+
     const htmlContent = await this.renderTemplate(EmailType.WELCOME, {
       ...data,
       appUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
@@ -153,7 +157,7 @@ export class EmailService {
    */
   async sendPasswordResetEmail(data: PasswordResetEmailData): Promise<void> {
     const subject = '🔐 Password Reset Request - Photo Project';
-    
+
     const htmlContent = await this.renderTemplate(EmailType.PASSWORD_RESET, {
       ...data,
       appUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
@@ -209,6 +213,28 @@ export class EmailService {
    */
   async previewTemplate(templateName: string, data: EmailTemplateData): Promise<string> {
     return await this.renderTemplate(templateName, data);
+  }
+
+  /**
+   * Send project invite email
+   */
+  async sendProjectInviteEmailAndRegister(data: ProjectInviteEmailData): Promise<void> {
+    const subject = `You've been invited to join ${data.projectName} on Photo Project`;
+
+    const htmlContent = await this.renderTemplate(EmailType.PROJECT_INVITE_AND_REGISTER, {
+      ...data,
+    });
+
+    await this.sendEmail(data.email, subject, htmlContent);
+  }
+  async sendExistingUserProjectInvite(data: ProjectInviteEmailData): Promise<void> {
+    const subject = `You've been invited to join ${data.projectName} on Photo Project`;
+
+    const htmlContent = await this.renderTemplate(EmailType.PROJECT_INVITE, {
+      ...data,
+    });
+
+    await this.sendEmail(data.email, subject, htmlContent);
   }
 }
 

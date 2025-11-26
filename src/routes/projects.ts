@@ -2,6 +2,7 @@ import express from 'express';
 import { ProjectController } from '@/controllers/projectController';
 import { requireTenant } from '@/middlewares/auth';
 import { validate, schemas } from '@/middlewares/validation';
+import { addProjectInvite } from '../controllers/inviteController';
 
 const router = express.Router();
 

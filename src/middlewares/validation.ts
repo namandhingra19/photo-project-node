@@ -17,7 +17,7 @@ export const validate = (schema: z.ZodSchema) => {
           code: err.code,
           value: (err as any).received
         }));
-        
+
         next(new ValidationError('Validation failed', {
           field: 'validation',
           value: validationErrors,
@@ -45,7 +45,7 @@ export const validateQuery = (schema: z.ZodSchema) => {
           code: err.code,
           value: (err as any).received
         }));
-        
+
         next(new ValidationError('Query validation failed', {
           field: 'query',
           value: validationErrors,
@@ -73,7 +73,7 @@ export const validateParams = (schema: z.ZodSchema) => {
           code: err.code,
           value: (err as any).received
         }));
-        
+
         next(new ValidationError('Parameter validation failed', {
           field: 'params',
           value: validationErrors,
@@ -92,12 +92,12 @@ export const schemas = {
   checkEmail: z.object({
     email: z.string().email('Invalid email format')
   }),
-  
+
   login: z.object({
     email: z.string().email('Invalid email format'),
     password: z.string().min(6, 'Password must be at least 6 characters').optional()
   }),
-  
+
   signup: z.object({
     email: z.string().email('Invalid email format'),
     name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
@@ -106,7 +106,7 @@ export const schemas = {
     }),
     password: z.string().min(6, 'Password must be at least 6 characters').optional()
   }),
-  
+
   emailVerification: z.object({
     email: z.string().email('Invalid email format'),
     name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
@@ -116,7 +116,7 @@ export const schemas = {
     verificationToken: z.string().min(1, 'Verification token is required'),
     password: z.string().min(6, 'Password must be at least 6 characters').optional()
   }),
-  
+
   googleRoleSelection: z.object({
     email: z.string().email('Invalid email format'),
     name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -124,22 +124,22 @@ export const schemas = {
       errorMap: () => ({ message: 'Role must be either ENTERPRISE or CLIENT' })
     })
   }),
-  
+
   refreshToken: z.object({
     refreshToken: z.string().min(1, 'Refresh token is required')
   }),
-  
+
   logout: z.object({
     refreshToken: z.string().min(1, 'Refresh token is required').optional()
   }),
-  
+
   // Project schemas
   createProject: z.object({
     title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
     description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
     eventDate: z.string().datetime('Invalid date format').optional().or(z.null())
   }),
-  
+
   updateProject: z.object({
     title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters').optional(),
     description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
@@ -149,14 +149,14 @@ export const schemas = {
     }).optional(),
     is_active: z.boolean().optional()
   }),
-  
+
   addCollaborator: z.object({
     user_profile_id: z.string().min(1, 'User profile ID is required'),
     accessibility: z.enum(['VIEW_ONLY', 'EDIT', 'ADMIN'], {
       errorMap: () => ({ message: 'Accessibility must be one of: VIEW_ONLY, EDIT, ADMIN' })
     })
   }),
-  
+
   // Album schemas
   createAlbum: z.object({
     project_id: z.string().min(1, 'Project ID is required'),
@@ -168,43 +168,43 @@ export const schemas = {
   createAlbumBatch: z.object({
     projectId: z.number().min(1, 'Project ID is required'),
     albums: z.array(z.object({
-      albumId: z.union([z.string().min(1), z.number()]),
+      albumId: z.number().nullable(),
       title: z.union([z.string().min(1), z.number()]),
       description: z.string().max(1000, 'Description must be less than 1000 characters').optional()
     })).min(1, 'At least one album is required')
   }),
-  
+
   updateAlbum: z.object({
     title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters').optional(),
     description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
     cover_image: z.string().url('Invalid cover image URL').optional()
   }),
-  
+
   // Photo schemas
   getSignedUrl: z.object({
     expiresIn: z.string().regex(/^\d+$/, 'ExpiresIn must be a number').transform(Number).optional()
   }),
-  
+
   // Common schemas
   pagination: z.object({
     page: z.string().regex(/^\d+$/, 'Page must be a number').transform(Number).default('1'),
     limit: z.string().regex(/^\d+$/, 'Limit must be a number').transform(Number).default('10'),
     search: z.string().max(100, 'Search term must be less than 100 characters').optional()
   }),
-  
+
   // ID validation schemas
   projectId: z.object({
     projectId: z.string().min(1, 'Project ID is required')
   }),
-  
+
   albumId: z.object({
     albumId: z.string().min(1, 'Album ID is required')
   }),
-  
+
   photoId: z.object({
     photoId: z.string().min(1, 'Photo ID is required')
   }),
-  
+
   // File upload validation
   fileUpload: z.object({
     fieldname: z.string(),

@@ -19,7 +19,7 @@ export class AuthService {
   // Create new user with profile
   static async createUser(data: SignupRequest, password?: string) {
     const hashedPassword = password ? await bcrypt.hash(password, 12) : null;
-    
+
     return await prisma.$transaction(async (tx) => {
       // Create user
       const user = await tx.user.create({
@@ -65,10 +65,10 @@ export class AuthService {
   // Generate verification token and send email
   static async sendVerificationEmail(email: string, role: UserRole, name?: string) {
     const verificationToken = uuidv4();
-    
+
     // Store verification token (you might want to create a separate table for this)
     // For now, we'll use a simple approach with user metadata
-    
+
     try {
       await emailService.sendVerificationEmail({
         email,
@@ -81,7 +81,7 @@ export class AuthService {
       console.warn('Email sending failed (development mode):', error.message);
       // For production, you might want to throw the error or use a fallback
     }
-    
+
     return verificationToken;
   }
 
@@ -89,7 +89,7 @@ export class AuthService {
   static async verifyEmailAndCreateUser(email: string, name: string, role: UserRole, verificationToken: string, password?: string) {
     // Verify token (implement your token verification logic)
     // For now, we'll assume token is valid
-    
+
     const { user, userProfile, tenant } = await this.createUser({
       email,
       name,
@@ -121,9 +121,9 @@ export class AuthService {
   static async handleGoogleAuth(profile: GoogleProfile, role?: UserRole) {
     const email = profile.emails[0].value;
     const name = `${profile.name.givenName} ${profile.name.familyName}`;
-    
+
     const existingUser = await this.checkUserExists(email);
-    
+
     if (existingUser) {
       // User exists, return first profile
       const userProfile = existingUser.userProfiles[0];
@@ -133,12 +133,12 @@ export class AuthService {
         isNewUser: false
       };
     }
-    
+
     if (!role) {
       // Role selection needed
       return { needsRoleSelection: true, email, name };
     }
-    
+
     // Create new user
     const { user, userProfile, tenant } = await this.createUser({
       email,
@@ -184,7 +184,7 @@ export class AuthService {
   }
 
   // Generate tokens for user
-  static async generateTokens({user, userProfile}: {user: any, userProfile: any}) {
+  static async generateTokens({ user, userProfile }: { user: any, userProfile: any }) {
     console.log('userProfile==>', userProfile);
     console.log('user==>', user);
 
@@ -236,6 +236,33 @@ export class AuthService {
 
     const { accessToken } = generateTokenPair(payload);
     return { accessToken };
+  }
+
+  static async loginUser({
+    email, password
+  }: {
+    email: string;
+    password: string;
+  }) {
+    const { user, userProfile } = await AuthService.loginWithPassword(email, password)
+    const { accessToken, refreshToken } = await AuthService.generateTokens({ user, userProfile });
+
+    return {
+      user: {
+        userId: user.userId,
+        email: user.email,
+        name: user.name,
+        isVerified: user.isVerified
+      },
+      userProfile: {
+        userProfileId: userProfile.userProfileId,
+        role: userProfile.role,
+        name: userProfile.name,
+        tenantId: userProfile.tenantId
+      },
+      accessToken,
+      refreshToken
+    }
   }
 
   // Logout (invalidate refresh token)

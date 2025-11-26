@@ -67,6 +67,14 @@
     {
       "path": "/api/ai/health",
       "method": "GET"
+    },
+    {
+      "path": "/api/invites/validate/*",
+      "method": "GET"
+    },
+    {
+      "path": "/api/invites/add-project-customer-and-register",
+      "method": "POST"
     }
   ]
 }
